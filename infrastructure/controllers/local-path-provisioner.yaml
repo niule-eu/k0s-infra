@@ -32,3 +32,7 @@ spec:
   values:
     storageClass:
       defaultClass: true
+    nodePathMap:
+    - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
+      paths:
+      - /var/opt/local-path-provisioner

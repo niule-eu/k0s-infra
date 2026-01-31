@@ -53,6 +53,14 @@ resources: Listing = new {
         storageClass {
           defaultClass = true
         }
+        nodePathMap {
+          new {
+            node = "DEFAULT_PATH_FOR_NON_LISTED_NODES"
+            paths {
+              "/var/opt/local-path-provisioner"
+            }
+          }
+        }
       }
     }
   }
