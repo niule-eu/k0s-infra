@@ -1,0 +1,13 @@
+amends "../../pkl/Kustomization.pkl"
+
+import* "*.pkl" as Resources
+
+
+local resources_filtered = Resources.toMap().filter((key, _) -> key != "kustomization.pkl")
+
+allFiles =
+  resources_filtered.fold(
+    new Mapping<String, FileOutput> {}, 
+    (acc, key, value) -> 
+      (acc) { ...value.output.files!! }
+  )

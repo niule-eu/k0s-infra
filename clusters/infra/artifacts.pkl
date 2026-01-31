@@ -1,0 +1,116 @@
+artifacts = new Listing {
+  new {
+    apiVersion = "source.extensions.fluxcd.io/v1beta1"
+    kind = "ArtifactGenerator"
+    metadata {
+      name = "flux-system"
+      namespace = "flux-system"
+    }
+    spec {
+      sources = new Listing {
+        new {
+          alias = "repo"
+          kind = "GitRepository"
+          name = "flux-system"
+        }
+      }
+      artifacts = new Listing {
+        new {
+          name = "infrastructure"
+          originRevision = "@repo"
+          copy = new Listing {
+            new {
+              from = "@repo/infrastructure/**"
+              to = "@artifact/"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+infrastructure = new Listing {
+  new {
+    apiVersion = "kustomize.toolkit.fluxcd.io/v1"
+    kind = "Kustomization"
+    metadata {
+      name = "infra-controllers"
+      namespace = "flux-system"
+    }
+    spec {
+      interval = "1h"
+      retryInterval = "2m"
+      timeout = "5m"
+      sourceRef {
+        kind = "ExternalArtifact"
+        name = "infrastructure"
+      }
+      path = "./controllers"
+      prune = true
+      wait = true
+    }
+  }
+  new {
+    apiVersion = "kustomize.toolkit.fluxcd.io/v1"
+    kind = "Kustomization"
+    metadata {
+      name = "infra-configs"
+      namespace = "flux-system"
+    }
+    spec {
+      dependsOn = new Listing {
+        new {
+          name = "infra-controllers"
+        }
+      }
+      interval = "1h"
+      retryInterval = "2m"
+      timeout = "5m"
+      sourceRef {
+        kind = "ExternalArtifact"
+        name = "infrastructure"
+      }
+      path = "./configs"
+      prune = true
+      decryption {
+        provider = "sops"
+      }
+      // patches = new Listing {
+      //   new {
+      //     patch =
+      //       """
+      //       - op = replace
+      //         path = /spec/acme/server
+      //         value = https =//acme-v02.api.letsencrypt.org/directory
+      //       """
+      //     target {
+      //       kind = "ClusterIssuer"
+      //       name = "letsencrypt"
+      //     }
+      //   }
+      // }
+    }
+  }
+}
+
+output {
+  value = new Listing { ...artifacts }
+  renderer = new YamlRenderer {
+    isStream = true
+  }
+  files {
+    ["artifacts.yaml"] {
+      value = artifacts
+      renderer = new YamlRenderer {
+        isStream = true
+      }
+    }
+    ["infrastructure.yaml"] {
+      value = infrastructure
+      renderer = new YamlRenderer {
+        isStream = true
+      }
+    }
+  }
+}

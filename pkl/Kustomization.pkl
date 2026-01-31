@@ -1,0 +1,21 @@
+import "@k8s/K8sResource.pkl"
+
+allFiles : Mapping<String, FileOutput>
+
+output {
+  value = allFiles.keys.toDynamic()
+  files = (allFiles) {
+    ["kustomization.yaml"] {
+      value = new {        
+        apiVersion = "kustomize.config.k8s.io/v1beta1"
+        kind = "Kustomization"
+        resources = new Listing {
+          ...allFiles.keys
+        }
+      }
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = false
+      }
+    }    
+  }
+}
