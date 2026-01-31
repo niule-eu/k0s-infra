@@ -19,7 +19,7 @@ resources: Listing = new {
     kind = "OCIRepository"
     metadata {
       name = helm_chart_name
-      namespace = module.namespace
+      namespace = "flux-system"
     }
     spec {
       interval = "5m"
