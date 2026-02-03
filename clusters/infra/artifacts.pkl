@@ -31,7 +31,7 @@ artifacts = new Listing {
           copy {
             new {
               from = "@repo/apps/**"
-              to = "@apps/"
+              to = "@artifact/"
             }
           }
         }

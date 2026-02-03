@@ -18,4 +18,4 @@ spec:
     originRevision: '@repo'
     copy:
     - from: '@repo/apps/**'
-      to: '@apps/'
+      to: '@artifact/'
