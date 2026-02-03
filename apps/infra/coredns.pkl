@@ -52,6 +52,9 @@ resources: Listing = new {
         isClusterService = false
         servers {
           new {
+            zones {
+              new { zone = "."; use_tcp = true }
+            }
             port = 1053
             plugins {
               new { name = "errors" }

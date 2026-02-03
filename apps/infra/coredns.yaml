@@ -28,7 +28,10 @@ spec:
   values:
     isClusterService: false
     servers:
-    - port: 1053
+    - zones:
+      - zone: '.'
+        use_tcp: true
+      port: 1053
       plugins:
       - name: errors
       - name: health
