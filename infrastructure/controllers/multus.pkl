@@ -1,0 +1,27 @@
+import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/K8sResource.pkl"
+import "pkl:yaml"
+
+hidden namespace = "local-path-provisioner"
+hidden helm_chart_name = "local-path-provisioner"
+hidden helm_chart_url = "oci://dp.apps.rancher.io/charts/local-path-provisioner"
+hidden helm_chart_version = "0.0.34"
+hidden chart_source_url = "https://github.com/rancher/local-path-provisioner.git"
+hidden chart_source_tag = "v0.0.34"
+
+resources = (new yaml.Parser {}).parseAll(read("https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset-thick.yml"))
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["multus.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}

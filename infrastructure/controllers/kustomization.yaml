@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
 - envoy-gateway.yaml
 - local-path-provisioner.yaml
+- multus.yaml
