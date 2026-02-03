@@ -14,3 +14,8 @@ spec:
     copy:
     - from: '@repo/infrastructure/**'
       to: '@artifact/'
+  - name: apps
+    originRevision: '@repo'
+    copy:
+    - from: '@repo/apps/**'
+      to: '@apps/'

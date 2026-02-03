@@ -1,0 +1,93 @@
+import "pkl:reflect"
+
+import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/api/core/v1/Service.pkl"
+import "@k8s/K8sResource.pkl"
+
+hidden namespace = "network-infra-ams23"
+hidden helm_chart_name = "coredns"
+hidden helm_chart_url = "oci://ghcr.io/coredns/charts/coredns"
+hidden helm_chart_version = "v1.45.2"
+
+hidden b = new Service {
+  spec {}
+}
+
+resources: Listing = new {
+  new Namespace {
+    metadata {
+      name = module.namespace
+    }
+  }
+  new {
+    apiVersion = "source.toolkit.fluxcd.io/v1"
+    kind = "OCIRepository"
+    metadata {
+      name = helm_chart_name
+      namespace = "flux-system"
+    }
+    spec {
+      interval = "5m"
+      url = helm_chart_url
+      ref {
+        semver = helm_chart_version
+      }
+    }
+  }
+  new {
+    apiVersion = "helm.toolkit.fluxcd.io/v2"
+    kind = "HelmRelease"
+    metadata {
+      name = helm_chart_name
+      namespace = module.namespace
+    }
+    spec {
+      interval = "10m"
+      chartRef {
+        kind = "OCIRepository"
+        name = helm_chart_name
+        namespace = "flux-system"
+      }
+    }
+    values {
+      isClusterService = false
+      servers {
+        new {
+          port = 1053
+          plugins {
+            new { name = "errors" }
+            new { name = "health"; configBlock = "lameduck 10s" }
+            new { name = "ready" }
+            new {
+              name = "forward"
+              parameters {
+                "."
+                "tls://1.0.0.1"
+                "tls://1.0.0.2"
+              }
+              configBlock = "tls_servername security.cloudflare-dns.com"
+            }
+            new { name = "log" }
+            new { name = "loop" }
+            new { name = "cache"; parameters { 60 } }
+          }
+        }
+      }
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["coredns.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}

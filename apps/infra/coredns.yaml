@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: network-infra-ams23
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: coredns
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: oci://ghcr.io/coredns/charts/coredns
+  ref:
+    semver: v1.45.2
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: coredns
+  namespace: network-infra-ams23
+spec:
+  interval: 10m
+  chartRef:
+    kind: OCIRepository
+    name: coredns
+    namespace: flux-system
+values:
+  isClusterService: false
+  servers:
+  - port: 1053
+    plugins:
+    - name: errors
+    - name: health
+      configBlock: lameduck 10s
+    - name: ready
+    - name: forward
+      parameters:
+      - '.'
+      - tls://1.0.0.1
+      - tls://1.0.0.2
+      configBlock: tls_servername security.cloudflare-dns.com
+    - name: log
+    - name: loop
+    - name: cache
+      parameters:
+      - 60
