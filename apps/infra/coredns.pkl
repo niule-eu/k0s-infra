@@ -67,7 +67,7 @@ resources: Listing = new {
               }
               new { name = "log" }
               new { name = "loop" }
-              new { name = "cache"; parameters { 60 } }
+              new { name = "cache"; parameters = 60 }
             }
           }
         }

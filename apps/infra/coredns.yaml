@@ -43,5 +43,4 @@ spec:
       - name: log
       - name: loop
       - name: cache
-        parameters:
-        - 60
+        parameters: 60
