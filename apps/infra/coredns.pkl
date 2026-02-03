@@ -48,28 +48,28 @@ resources: Listing = new {
         name = helm_chart_name
         namespace = "flux-system"
       }
-    }
-    values {
-      isClusterService = false
-      servers {
-        new {
-          port = 1053
-          plugins {
-            new { name = "errors" }
-            new { name = "health"; configBlock = "lameduck 10s" }
-            new { name = "ready" }
-            new {
-              name = "forward"
-              parameters {
-                "."
-                "tls://1.0.0.1"
-                "tls://1.0.0.2"
+      values {
+        isClusterService = false
+        servers {
+          new {
+            port = 1053
+            plugins {
+              new { name = "errors" }
+              new { name = "health"; configBlock = "lameduck 10s" }
+              new { name = "ready" }
+              new {
+                name = "forward"
+                parameters {
+                  "."
+                  "tls://1.0.0.1"
+                  "tls://1.0.0.2"
+                }
+                configBlock = "tls_servername security.cloudflare-dns.com"
               }
-              configBlock = "tls_servername security.cloudflare-dns.com"
+              new { name = "log" }
+              new { name = "loop" }
+              new { name = "cache"; parameters { 60 } }
             }
-            new { name = "log" }
-            new { name = "loop" }
-            new { name = "cache"; parameters { 60 } }
           }
         }
       }

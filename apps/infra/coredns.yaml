@@ -25,23 +25,23 @@ spec:
     kind: OCIRepository
     name: coredns
     namespace: flux-system
-values:
-  isClusterService: false
-  servers:
-  - port: 1053
-    plugins:
-    - name: errors
-    - name: health
-      configBlock: lameduck 10s
-    - name: ready
-    - name: forward
-      parameters:
-      - '.'
-      - tls://1.0.0.1
-      - tls://1.0.0.2
-      configBlock: tls_servername security.cloudflare-dns.com
-    - name: log
-    - name: loop
-    - name: cache
-      parameters:
-      - 60
+  values:
+    isClusterService: false
+    servers:
+    - port: 1053
+      plugins:
+      - name: errors
+      - name: health
+        configBlock: lameduck 10s
+      - name: ready
+      - name: forward
+        parameters:
+        - '.'
+        - tls://1.0.0.1
+        - tls://1.0.0.2
+        configBlock: tls_servername security.cloudflare-dns.com
+      - name: log
+      - name: loop
+      - name: cache
+        parameters:
+        - 60
