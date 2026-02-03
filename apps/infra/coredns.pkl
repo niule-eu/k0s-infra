@@ -59,11 +59,7 @@ resources: Listing = new {
               new { name = "ready" }
               new {
                 name = "forward"
-                parameters {
-                  "."
-                  "tls://1.0.0.1"
-                  "tls://1.0.0.2"
-                }
+                parameters = ". tls://1.0.0.1 tls://1.0.0.2"
                 configBlock = "tls_servername security.cloudflare-dns.com"
               }
               new { name = "log" }

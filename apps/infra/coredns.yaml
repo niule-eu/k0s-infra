@@ -35,10 +35,7 @@ spec:
         configBlock: lameduck 10s
       - name: ready
       - name: forward
-        parameters:
-        - '.'
-        - tls://1.0.0.1
-        - tls://1.0.0.2
+        parameters: . tls://1.0.0.1 tls://1.0.0.2
         configBlock: tls_servername security.cloudflare-dns.com
       - name: log
       - name: loop
