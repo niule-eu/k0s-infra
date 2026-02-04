@@ -54,7 +54,8 @@ metadata:
   namespace: kube-system
 spec:
   logging:
-    level: {}
+    level:
+      default: info
   provider:
     type: Kubernetes
     kubernetes:
