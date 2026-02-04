@@ -37,6 +37,8 @@ metadata:
   name: dns-nodeport
   namespace: kube-system
 spec:
+  logging:
+    level: {}
   provider:
     type: Kubernetes
     kubernetes:

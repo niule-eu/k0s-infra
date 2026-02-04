@@ -39,6 +39,11 @@ resources: Listing = new {
       namespace = "kube-system"
     }
     spec {
+      logging {
+        level {
+          default = "info"
+        }
+      }
       provider {
         type = "Kubernetes"
         kubernetes {
