@@ -11,6 +11,34 @@ resources: Listing = new {
       controllerName = "gateway.envoyproxy.io/gatewayclass-controller"
     }
   }
+  new {
+    apiVersion = "gateway.networking.k8s.io/v1alpha2"
+    kind = "UDPRoute"
+    metadata {
+      name = "coredns-udp"
+      namespace = "kube-system"
+    }
+    spec {
+      parentRefs {
+        new {
+          name = "dns-gateway"
+          namespace = "kube-system"
+          sectionName = "dns-udp"
+        }
+      }
+      rules {
+        new {
+          backendRefs {
+            new {
+              name = "coredns"
+              namespace = "network-infra-ams23"
+              port = 1053
+            }
+          }
+        }
+      }
+    }
+  }
   new Gateway {
     metadata {
       name = "dns-gateway"
@@ -49,27 +77,27 @@ resources: Listing = new {
         kubernetes {
           envoyService {
             type = "NodePort"
-            patch {
-              type = "StrategicMerge"
-              value {
-                spec {
-                  ports {
-                    new {
-                      name = "dns_tcp"
-                      port = 53
-                      protocol = "TCP"
-                      nodePort = 53
-                    }
-                    new {
-                      name = "dns_udp"
-                      port = 53
-                      protocol = "UDP"
-                      nodePort = 53
-                    }
-                  }
-                }
-              }
-            }
+            // patch {
+            //   type = "StrategicMerge"
+            //   value {
+            //     spec {
+            //       ports {
+            //         new {
+            //           name = "dns_tcp"
+            //           port = 53
+            //           protocol = "TCP"
+            //           nodePort = 53
+            //         }
+            //         new {
+            //           name = "dns_udp"
+            //           port = 53
+            //           protocol = "UDP"
+            //           nodePort = 53
+            //         }
+            //       }
+            //     }
+            //   }
+            // }
           }
         }
       }
