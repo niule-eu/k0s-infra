@@ -51,6 +51,7 @@ resources: Listing = new {
       values {
         isClusterService = false
         servers {
+          // TODO: Add server config for infra.ams23.niule.xyz, use env variables injected into coredns pod about authoritative dns service, see: https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables 
           new {
             zones {
               new { zone = "."; use_tcp = true }

@@ -1,0 +1,67 @@
+import "@k8s-gateway/v1/GatewayClass.pkl"
+import "@k8s/K8sResource.pkl"
+
+resources: Listing = new {
+  new GatewayClass {
+    metadata {
+      name = "eg"
+    }
+    spec {
+      controllerName = "gateway.envoyproxy.io/gatewayclass-controller"
+    }
+  }
+  new {
+    apiVersion = "gateway.envoyproxy.io/v1alpha1"
+    kind = "EnvoyProxy"
+    metadata {
+      name = "dns-nodeport"
+      namespace = "kube-system"
+    }
+    spec {
+      provider {
+        type = "Kubernetes"
+        kubernetes {
+          envoyService {
+            type = "NodePort"
+            patch {
+              type = "StrategicMerge"
+              value {
+                spec {
+                  ports {
+                    new {
+                      name = "dns_tcp"
+                      port = 53
+                      protocol = "TCP"
+                      nodePort = 53
+                    }
+                    new {
+                      name = "dns_udp"
+                      port = 53
+                      protocol = "UDP"
+                      nodePort = 53
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["envoy-gateway.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}
