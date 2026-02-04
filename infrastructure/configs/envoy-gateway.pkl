@@ -1,3 +1,4 @@
+import "@k8s-gateway/v1/Gateway.pkl"
 import "@k8s-gateway/v1/GatewayClass.pkl"
 import "@k8s/K8sResource.pkl"
 
@@ -8,6 +9,26 @@ resources: Listing = new {
     }
     spec {
       controllerName = "gateway.envoyproxy.io/gatewayclass-controller"
+    }
+  }
+  new Gateway {
+    metadata {
+      name = "dns-gateway"
+      namespace = "kube-system"
+    }
+    spec {
+      gatewayClassName = "eg"
+      infrastructure {
+        parametersRef {
+          group = "gateway.envoyproxy.io"
+          kind = "EnvoyProxy"
+          name = "dns-nodeport"
+        }
+      }
+      listeners {
+        dnsListener("TCP")
+        dnsListener("UDP")
+      }
     }
   }
   new {
@@ -46,6 +67,19 @@ resources: Listing = new {
             }
           }
         }
+      }
+    }
+  }
+}
+
+local function dnsListener(proto: "TCP" | "UDP") = new Gateway.Listener {
+  port = 53
+  protocol = proto
+  name = "dns-\(proto.toLowerCase())"
+  allowedRoutes {
+    kinds {
+      new {
+        kind = "\(proto)Route"
       }
     }
   }
