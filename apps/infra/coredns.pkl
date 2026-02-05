@@ -2,6 +2,7 @@ import "pkl:reflect"
 
 import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/api/core/v1/Service.pkl"
+import "@k8s-gateway/v1beta1/ReferenceGrant.pkl"
 import "@k8s/K8sResource.pkl"
 
 hidden namespace = "network-infra-ams23"
@@ -9,14 +10,45 @@ hidden helm_chart_name = "coredns"
 hidden helm_chart_url = "oci://ghcr.io/coredns/charts/coredns"
 hidden helm_chart_version = "v1.45.2"
 
-hidden b = new Service {
-  spec {}
-}
+// apiVersion: gateway.networking.k8s.io/v1beta1
+// kind: ReferenceGrant
+// metadata:
+//   name: bar
+//   namespace: bar
+// spec:
+//   from:
+//   - group: gateway.networking.k8s.io
+//     kind: HTTPRoute
+//     namespace: foo
+//   to:
+//   - group: ""
+//     kind: Service
 
 resources: Listing = new {
   new Namespace {
     metadata {
       name = module.namespace
+    }
+  }
+  new ReferenceGrant {
+    metadata {
+      name = "coredns-kube-system"
+      namespace = module.namespace
+    }
+    spec {
+      from {
+        new {
+          group = "gateway.networking.k8s.io"
+          kind = "UDPRoute"
+          namespace = "kube-system"
+        }
+      }
+      to {
+        new {
+          group = ""
+          kind = "Service"
+        }
+      }
     }
   }
   new {
