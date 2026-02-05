@@ -43,6 +43,13 @@ resources: Listing = new {
         name = helm_chart_name
         namespace = "flux-system"
       }
+      values {
+        speaker {
+          frr {
+            enabled = false
+          }
+        }
+      }
     }
   }
 }
