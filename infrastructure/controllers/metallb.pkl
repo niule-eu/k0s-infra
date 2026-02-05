@@ -1,0 +1,63 @@
+import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/K8sResource.pkl"
+
+import "pkl:reflect"
+
+hidden namespace = "metallb-system"
+hidden helm_chart_name = "metallb"
+hidden helm_chart_url = "oci://quay.io/metallb/chart/metallb"
+hidden helm_chart_version = "0.15.3"
+
+resources: Listing = new { 
+  new Namespace {
+    metadata {
+      name = module.namespace
+    }
+  }
+  new {
+    apiVersion = "source.toolkit.fluxcd.io/v1"
+    kind = "OCIRepository"
+    metadata {
+      name = helm_chart_name
+      namespace = "flux-system"
+    }
+    spec {
+      interval = "5m"
+      url = helm_chart_url
+      ref {
+        semver = helm_chart_version
+      }
+    }
+  }
+  new {
+    apiVersion = "helm.toolkit.fluxcd.io/v2"
+    kind = "HelmRelease"
+    metadata {
+      name = helm_chart_name
+      namespace = module.namespace
+    }
+    spec {
+      interval = "10m"
+      chartRef {
+        kind = "OCIRepository"
+        name = helm_chart_name
+        namespace = "flux-system"
+      }
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["metallb.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}

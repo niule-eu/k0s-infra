@@ -1,0 +1,43 @@
+import "@k8s/K8sResource.pkl"
+import "@net/net.pkl"
+
+import "../controllers/metallb.pkl"
+
+resources: Listing = new {
+  new {
+    apiVersion = "metallb.io/v1beta1"
+    kind = "IPAddressPool"
+    metadata {
+      name = "pool"
+      namespace = metallb.namespace
+    }
+    spec {
+      addresses {
+        net.IPv4Network("172.16.13.24/29").toString()
+      }
+    }
+  }
+  new {
+    apiVersion = "metallb.io/v1beta1"
+    kind = "L2Advertisement"
+    metadata {
+      name = "advertisement"
+      namespace = metallb.namespace
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["metallb.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}
