@@ -10,20 +10,6 @@ hidden helm_chart_name = "coredns"
 hidden helm_chart_url = "oci://ghcr.io/coredns/charts/coredns"
 hidden helm_chart_version = "v1.45.2"
 
-// apiVersion: gateway.networking.k8s.io/v1beta1
-// kind: ReferenceGrant
-// metadata:
-//   name: bar
-//   namespace: bar
-// spec:
-//   from:
-//   - group: gateway.networking.k8s.io
-//     kind: HTTPRoute
-//     namespace: foo
-//   to:
-//   - group: ""
-//     kind: Service
-
 resources: Listing = new {
   new Namespace {
     metadata {

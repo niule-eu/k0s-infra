@@ -76,30 +76,10 @@ resources: Listing = new {
         type = "Kubernetes"
         kubernetes {
           envoyService {
+            allocateLoadBalancerNodePorts = false
             annotations {
               `metallb.io/loadBalancerIPs` = "172.16.13.25"
             }
-            // patch {
-            //   type = "StrategicMerge"
-            //   value {
-            //     spec {
-            //       ports {
-            //         new {
-            //           name = "dns_tcp"
-            //           port = 53
-            //           protocol = "TCP"
-            //           nodePort = 53
-            //         }
-            //         new {
-            //           name = "dns_udp"
-            //           port = 53
-            //           protocol = "UDP"
-            //           nodePort = 53
-            //         }
-            //       }
-            //     }
-            //   }
-            // }
           }
         }
       }

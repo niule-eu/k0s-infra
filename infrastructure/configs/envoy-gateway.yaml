@@ -60,5 +60,6 @@ spec:
     type: Kubernetes
     kubernetes:
       envoyService:
+        allocateLoadBalancerNodePorts: false
         annotations:
           metallb.io/loadBalancerIPs: 172.16.13.25
