@@ -76,7 +76,9 @@ resources: Listing = new {
         type = "Kubernetes"
         kubernetes {
           envoyService {
-            type = "NodePort"
+            annotations {
+              `metallb.io/loadBalancerIPs` = "172.16.13.25"
+            }
             // patch {
             //   type = "StrategicMerge"
             //   value {
