@@ -2,6 +2,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: kea-postgres
+  namespace: network-infra-ams23
 spec:
   instances: 1
   imageCatalogRef:

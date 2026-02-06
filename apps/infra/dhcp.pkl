@@ -16,7 +16,10 @@ resources: Listing = new {
   new {
     apiVersion = "postgresql.cnpg.io/v1"
     kind = "Cluster"
-    metadata { name = "kea-postgres" }
+    metadata { 
+      name = "kea-postgres"
+      namespace = niams23meta.namespace
+    }
     spec {
       instances = 1
       imageCatalogRef {
