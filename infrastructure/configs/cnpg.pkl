@@ -1,0 +1,44 @@
+import "pkl:yaml"
+
+import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/K8sResource.pkl"
+
+import "../controllers/cloud-native-pg.pkl" as cnpg
+
+hidden manifest_source_tag = "main"
+hidden image_cataloge_debian_major_version = "trixie"
+hidden image_cataloge_image_type: "minimal" | "standard" | "extensions" = "minimal"
+
+local manifest_uri =
+  "https://raw.githubusercontent.com/cloudnative-pg/artifacts/refs/heads/"
+    + manifest_source_tag
+    + "/image-catalogs"
+    + "/catalog-\(image_cataloge_image_type)-\(image_cataloge_debian_major_version).yaml"
+
+resources = (
+  (new yaml.Parser {})
+    .parseAll(read(manifest_uri))
+    .flatMap((elem) -> List(elem.toMap().toMapping()))
+    .toListing()
+) {
+  [0] {
+    ["metadata"] {
+      ["namespace"] = cnpg.namespace
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["cnpg.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}
