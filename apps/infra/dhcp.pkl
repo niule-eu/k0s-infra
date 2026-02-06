@@ -26,8 +26,8 @@ resources: Listing = new {
         apiGroup = "postgresql.cnpg.io"
         kind = "ClusterImageCatalog"
         name = cnpg.image_cataloge_name
+        major = 18
       }
-      major = 18
       storage { size = "1Gi" }
       bootstrap {
         initdb {
