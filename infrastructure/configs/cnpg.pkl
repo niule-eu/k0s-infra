@@ -8,6 +8,10 @@ import "../controllers/cloud-native-pg.pkl" as cnpg
 hidden manifest_source_tag = "main"
 hidden image_cataloge_debian_major_version = "trixie"
 hidden image_cataloge_image_type: "minimal" | "standard" | "extensions" = "minimal"
+hidden fixed image_cataloge_name =
+  "postgresql-"
+    + "\(image_cataloge_image_type)-"
+    + "\(image_cataloge_debian_major_version)"
 
 local manifest_uri =
   "https://raw.githubusercontent.com/cloudnative-pg/artifacts/refs/heads/"

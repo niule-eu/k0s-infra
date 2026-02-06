@@ -4,18 +4,14 @@ import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/api/core/v1/Service.pkl"
 import "@k8s-gateway/v1beta1/ReferenceGrant.pkl"
 import "@k8s/K8sResource.pkl"
+import "./network-infra-ams23-meta.pkl" as niams23meta
 
-hidden namespace = "network-infra-ams23"
+hidden fixed namespace = niams23meta.namespace
 hidden helm_chart_name = "coredns"
 hidden helm_chart_url = "oci://ghcr.io/coredns/charts/coredns"
 hidden helm_chart_version = "v1.45.2"
 
 resources: Listing = new {
-  new Namespace {
-    metadata {
-      name = module.namespace
-    }
-  }
   new ReferenceGrant {
     metadata {
       name = "coredns-kube-system"

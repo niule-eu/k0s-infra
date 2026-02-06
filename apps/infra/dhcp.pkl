@@ -1,0 +1,52 @@
+import "pkl:reflect"
+
+import "@k8s-gateway/v1beta1/ReferenceGrant.pkl"
+import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/api/core/v1/Service.pkl"
+import "@k8s/K8sResource.pkl"
+
+import "../../infrastructure/configs/cnpg.pkl"
+import "./network-infra-ams23-meta.pkl" as niams23meta
+
+hidden kea_postgres_user = "kea"
+hidden kea_postgres_db = "kea"
+hidden kea_postgres_password = "kea"
+
+resources: Listing = new {
+  new {
+    apiVersion = "postgresql.cnpg.io/v1"
+    kind = "Cluster"
+    metadata { name = "kea-postgres" }
+    spec {
+      instances = 1
+      imageCatalogRef {
+        apiGroup = "postgresql.cnpg.io"
+        kind = "ClusterImageCatalog"
+        name = cnpg.image_cataloge_name
+      }
+      major = 18
+      storage { size = "1Gi" }
+      bootstrap {
+        initdb {
+          database = kea_postgres_db
+          owner = kea_postgres_user
+        }
+      }
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["dhcp.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}

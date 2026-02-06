@@ -1,0 +1,27 @@
+import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/K8sResource.pkl"
+
+hidden namespace = "network-infra-ams23"
+
+resources: Listing = new {
+  new Namespace {
+    metadata {
+      name = module.namespace
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["network-infra-ams23-meta.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}
