@@ -8,6 +8,7 @@ resources: Listing = new {
     kind = "NetworkAttachmentDefinition"
     metadata {
       name = "\(mf790s7.ethernet_interfaces[0].name).13"
+      namespace = "kube-system"
     }
     spec {
       config =
@@ -27,6 +28,7 @@ resources: Listing = new {
     kind = "NetworkAttachmentDefinition"
     metadata {
       name = "\(mf790s7.ethernet_interfaces[0].name).macvlan.13"
+      namespace = "kube-system"
     }
     spec {
       config =

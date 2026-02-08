@@ -2,6 +2,7 @@ apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
   name: enp1s0f0.13
+  namespace: kube-system
 spec:
   config: |-
     {
@@ -16,6 +17,7 @@ apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
   name: enp1s0f0.macvlan.13
+  namespace: kube-system
 spec:
   config: |-
     {
