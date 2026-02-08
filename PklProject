@@ -10,6 +10,9 @@ dependencies {
   ["net"] {
     uri = "package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net@1.2.1"
   }
+  ["homelab-nodes"] = import("../nodes/PklProject")
+    // "file://../../../nodes/on-premise/PklProject"
+  
 }
 
 package {

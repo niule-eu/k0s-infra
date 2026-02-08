@@ -1,0 +1,35 @@
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: enp1s0f0.13
+spec:
+  config: |-
+    {
+      "cniVersion": "0.3.1",
+      "type": "vlan",
+      "master": "enp1s0f0",
+      "vlanid": "13",
+      "ipam": {}
+    }
+---
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: enp1s0f0.macvlan.13
+spec:
+  config: |-
+    {
+      "cniVersion": "0.3.1",
+      "type": "macvlan",
+      "master": "enp1s0f0.13",
+      "mode": "bridge",
+      "ipam": {
+        "type": "static",
+        "addresses": [
+          {
+            "address": "172.16.13.23/24",
+            "gateway": "172.16.13.1"
+          }
+        ]
+      }
+    }

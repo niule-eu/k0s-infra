@@ -4,3 +4,4 @@ resources:
 - cnpg.yaml
 - envoy-gateway.yaml
 - metallb.yaml
+- multus.yaml

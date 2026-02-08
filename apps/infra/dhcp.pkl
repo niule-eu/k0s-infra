@@ -1,6 +1,7 @@
 import "pkl:reflect"
 
 import "@k8s-gateway/v1beta1/ReferenceGrant.pkl"
+import "@k8s/api/apps/v1/Deployment.pkl"
 import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/api/core/v1/Service.pkl"
 import "@k8s/K8sResource.pkl"
@@ -11,12 +12,13 @@ import "./network-infra-ams23-meta.pkl" as niams23meta
 hidden kea_postgres_user = "kea"
 hidden kea_postgres_db = "kea"
 hidden kea_postgres_password = "kea"
+hidden kea_dhcpv4_image = "ghcr.io/niule-eu/homelab/kea-dhcpv4-slim:3.1.5"
 
 resources: Listing = new {
   new {
     apiVersion = "postgresql.cnpg.io/v1"
     kind = "Cluster"
-    metadata { 
+    metadata {
       name = "kea-postgres"
       namespace = niams23meta.namespace
     }
@@ -33,6 +35,34 @@ resources: Listing = new {
         initdb {
           database = kea_postgres_db
           owner = kea_postgres_user
+        }
+      }
+    }
+  }
+  new Deployment {
+    metadata {
+      name = "kea-dhcpv4"
+      namespace = niams23meta.namespace
+    }
+    spec {
+      replicas = 1
+      template {
+        spec {
+          containers {
+            new {
+              name = "kea-dhcpv4"
+              image = kea_dhcpv4_image
+              securityContext {
+                capabilities {
+                  add {
+                    "CAP_NET_ADMIN"
+                    "CAP_NET_RAW"
+                    "CAP_NET_BIND_SERVICE"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }

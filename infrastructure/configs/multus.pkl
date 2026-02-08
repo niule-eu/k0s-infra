@@ -1,0 +1,67 @@
+import "@k8s/K8sResource.pkl"
+
+import "@homelab-nodes/on-premise/mf790s7.pkl"
+
+resources: Listing = new {
+  new {
+    apiVersion = "k8s.cni.cncf.io/v1"
+    kind = "NetworkAttachmentDefinition"
+    metadata {
+      name = "\(mf790s7.ethernet_interfaces[0].name).13"
+    }
+    spec {
+      config =
+        """
+        {
+          "cniVersion": "0.3.1",
+          "type": "vlan",
+          "master": "\(mf790s7.ethernet_interfaces[0].name)",
+          "vlanid": "13",
+          "ipam": {}
+        }
+        """
+    }
+  }
+  new {
+    apiVersion = "k8s.cni.cncf.io/v1"
+    kind = "NetworkAttachmentDefinition"
+    metadata {
+      name = "\(mf790s7.ethernet_interfaces[0].name).macvlan.13"
+    }
+    spec {
+      config =
+        """
+        {
+          "cniVersion": "0.3.1",
+          "type": "macvlan",
+          "master": "\(mf790s7.ethernet_interfaces[0].name).13",
+          "mode": "bridge",
+          "ipam": {
+            "type": "static",
+            "addresses": [
+              {
+                "address": "172.16.13.23/24",
+                "gateway": "172.16.13.1"
+              }
+            ]
+          }
+        }
+        """
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["multus.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}
