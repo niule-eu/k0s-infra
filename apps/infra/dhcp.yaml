@@ -24,15 +24,21 @@ metadata:
   namespace: network-infra-ams23
 spec:
   template:
+    metadata:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: kube-system/kea-macvlan-13
+      labels:
+        app: kea-dhcpv4
     spec:
       containers:
-      - securityContext:
-          capabilities:
-            add:
-            - CAP_NET_ADMIN
-            - CAP_NET_RAW
-            - CAP_NET_BIND_SERVICE
-        image: ghcr.io/niule-eu/homelab/kea-dhcpv4-slim:3.1.5
-        name: kea-dhcpv4
+      - image: nginx:alpine
+        command:
+        - sleep
+        - infinity
+        name: idle
   replicas: 1
-  selector: {}
+  selector:
+    matchLabels:
+      app: kea-dhcpv4
+  strategy:
+    type: Recreate

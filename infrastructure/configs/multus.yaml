@@ -1,29 +1,14 @@
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
-  name: enp1s0f0.13
-  namespace: kube-system
-spec:
-  config: |-
-    {
-      "cniVersion": "0.3.1",
-      "type": "vlan",
-      "master": "enp1s0f0",
-      "vlanid": "13",
-      "ipam": {}
-    }
----
-apiVersion: k8s.cni.cncf.io/v1
-kind: NetworkAttachmentDefinition
-metadata:
-  name: enp1s0f0.macvlan.13
+  name: kea-macvlan-13
   namespace: kube-system
 spec:
   config: |-
     {
       "cniVersion": "0.3.1",
       "type": "macvlan",
-      "master": "enp1s0f0.13",
+      "master": "vlan13",
       "mode": "bridge",
       "ipam": {
         "type": "static",

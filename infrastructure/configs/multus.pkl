@@ -7,27 +7,7 @@ resources: Listing = new {
     apiVersion = "k8s.cni.cncf.io/v1"
     kind = "NetworkAttachmentDefinition"
     metadata {
-      name = "\(mf790s7.ethernet_interfaces[0].name).13"
-      namespace = "kube-system"
-    }
-    spec {
-      config =
-        """
-        {
-          "cniVersion": "0.3.1",
-          "type": "vlan",
-          "master": "\(mf790s7.ethernet_interfaces[0].name)",
-          "vlanid": "13",
-          "ipam": {}
-        }
-        """
-    }
-  }
-  new {
-    apiVersion = "k8s.cni.cncf.io/v1"
-    kind = "NetworkAttachmentDefinition"
-    metadata {
-      name = "\(mf790s7.ethernet_interfaces[0].name).macvlan.13"
+      name = "kea-macvlan-13"
       namespace = "kube-system"
     }
     spec {
@@ -36,7 +16,7 @@ resources: Listing = new {
         {
           "cniVersion": "0.3.1",
           "type": "macvlan",
-          "master": "\(mf790s7.ethernet_interfaces[0].name).13",
+          "master": "vlan13",
           "mode": "bridge",
           "ipam": {
             "type": "static",
