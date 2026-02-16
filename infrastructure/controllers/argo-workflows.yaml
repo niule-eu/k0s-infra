@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argo
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: argo-workflows
+  namespace: flux-system
+spec:
+  interval: 10m
+  url: https://argoproj.github.io/argo-helm
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: argo-workflows
+  namespace: argo
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: argo-workflows
+      version: 0.46.0
+      sourceRef:
+        kind: HelmRepository
+        name: argo-workflows
+        namespace: flux-system
+      interval: 10m
+  values:
+    crds:
+      full: true
+    workflow:
+      serviceAccount:
+        create: true
+        name: argo-executor
+      rbac:
+        create: true
+    controller:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 512Mi
+        limits:
+          cpu: '1'
+          memory: 1Gi
+      workflowDefaults:
+        spec:
+          parallelism: 1
+          ttlStrategy:
+            secondsAfterCompletion: 43200
+      workflowNamespaces:
+      - default
+      - certs
+      telemetryConfig:
+        enabled: false
+      metricsConfigConfig:
+        enabled: false
+    server:
+      enabled: false
+    executor:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 300m
+          memory: 256Mi

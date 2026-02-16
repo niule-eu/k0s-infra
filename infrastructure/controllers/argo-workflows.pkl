@@ -1,0 +1,150 @@
+import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/K8sResource.pkl"
+
+hidden namespace = "argo"
+hidden helm_chart_name = "argo-workflows"
+hidden helm_chart_url = "https://argoproj.github.io/argo-helm"
+hidden helm_chart_version = "0.46.0"
+hidden workflow_service_account_name = "argo-executor"
+
+hidden resource_constraints = new {
+  // Resource constraints for radxax4 node (N100 CPU, 8GB RAM)
+  workflow_controller = new {
+    cpu_request = "500m"
+    cpu_limit = "1"
+    memory_request = "512Mi"
+    memory_limit = "1Gi"
+  }
+  workflow_server = new {
+    cpu_request = "200m"
+    cpu_limit = "500m"
+    memory_request = "256Mi"
+    memory_limit = "512Mi"
+  }
+  workflow_executor = new {
+    cpu_request = "100m"
+    cpu_limit = "300m"
+    memory_request = "128Mi"
+    memory_limit = "256Mi"
+  }
+}
+
+resources: Listing = new {
+  new Namespace {
+    metadata {
+      name = module.namespace
+    }
+  }
+  new {
+    apiVersion = "source.toolkit.fluxcd.io/v1"
+    kind = "HelmRepository"
+    metadata {
+      name = helm_chart_name
+      namespace = "flux-system"
+    }
+    spec {
+      interval = "10m"
+      url = helm_chart_url
+    }
+  }
+  new {
+    apiVersion = "helm.toolkit.fluxcd.io/v2"
+    kind = "HelmRelease"
+    metadata {
+      name = helm_chart_name
+      namespace = module.namespace
+    }
+    spec {
+      interval = "10m"
+      chart {
+        spec {
+          chart = "argo-workflows"
+          version = helm_chart_version
+          sourceRef {
+            kind = "HelmRepository"
+            name = helm_chart_name
+            namespace = "flux-system"
+          }
+          interval = "10m"
+        }
+      }
+      values {
+        crds {
+          full = true
+        }
+        workflow {
+          serviceAccount { 
+            create = true
+            name = workflow_service_account_name
+          }
+          rbac {
+            create = true
+          }
+        }
+        controller {
+          resources {
+            requests {
+              cpu = resource_constraints.workflow_controller.cpu_request
+              memory = resource_constraints.workflow_controller.memory_request
+            }
+            limits {
+              cpu = resource_constraints.workflow_controller.cpu_limit
+              memory = resource_constraints.workflow_controller.memory_limit
+            }
+          }
+          // Reduce parallelism to avoid resource exhaustion
+          workflowDefaults {
+            spec {
+              parallelism = 1 // More conservative for resource-constrained environment
+              ttlStrategy {
+                secondsAfterCompletion = 43200 // 12 hours - more aggressive cleanup
+              }
+            }
+          }
+          workflowNamespaces {
+            "default"
+            "certs"
+          }
+          // Disable telemetry and metrics to save resources
+          telemetryConfig {
+            enabled = false
+          }
+          metricsConfigConfig {
+            enabled = false
+          }
+        }
+        server {
+          // Disable server to save resources (UI/CLI access not critical for homelab)
+          enabled = false
+        }
+        executor {
+          resources {
+            requests {
+              cpu = resource_constraints.workflow_executor.cpu_request
+              memory = resource_constraints.workflow_executor.memory_request
+            }
+            limits {
+              cpu = resource_constraints.workflow_executor.cpu_limit
+              memory = resource_constraints.workflow_executor.memory_limit
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["argo-workflows.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}
