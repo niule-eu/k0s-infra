@@ -82,6 +82,7 @@ resources: Listing = new {
           }
         }
         controller {
+          parallelism = 2
           resources {
             requests {
               cpu = resource_constraints.workflow_controller.cpu_request
@@ -95,7 +96,7 @@ resources: Listing = new {
           // Reduce parallelism to avoid resource exhaustion
           workflowDefaults {
             spec {
-              parallelism = 1 // More conservative for resource-constrained environment
+              parallelism = 2 // More conservative for resource-constrained environment
               ttlStrategy {
                 secondsAfterCompletion = 43200 // 12 hours - more aggressive cleanup
               }

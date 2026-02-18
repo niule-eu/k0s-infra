@@ -36,6 +36,7 @@ spec:
       rbac:
         create: true
     controller:
+      parallelism: 2
       resources:
         requests:
           cpu: 500m
@@ -45,7 +46,7 @@ spec:
           memory: 1Gi
       workflowDefaults:
         spec:
-          parallelism: 1
+          parallelism: 2
           ttlStrategy:
             secondsAfterCompletion: 43200
       workflowNamespaces:
