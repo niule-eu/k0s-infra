@@ -69,9 +69,9 @@ resources: Listing = new {
         }
       }
       values {
-        crds {
-          full = true
-        }
+        // crds {
+        //   full = true
+        // }
         workflow {
           serviceAccount { 
             create = true
@@ -103,7 +103,6 @@ resources: Listing = new {
           }
           workflowNamespaces {
             "default"
-            "certs"
           }
           // Disable telemetry and metrics to save resources
           telemetryConfig {

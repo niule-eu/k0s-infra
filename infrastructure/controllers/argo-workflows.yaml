@@ -29,8 +29,6 @@ spec:
         namespace: flux-system
       interval: 10m
   values:
-    crds:
-      full: true
     workflow:
       serviceAccount:
         create: true
@@ -52,7 +50,6 @@ spec:
             secondsAfterCompletion: 43200
       workflowNamespaces:
       - default
-      - certs
       telemetryConfig:
         enabled: false
       metricsConfigConfig:
