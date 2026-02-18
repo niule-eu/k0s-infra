@@ -70,3 +70,28 @@ hlcli render-pkl -p /absolute/path/to/k0s-infra infrastructure/controllers/argo-
 - ✅ New controllers are automatically discovered - no kustomization.pkl changes needed
 - ✅ Manual rendering is supported but may require additional steps for full integration
 - ✅ Always use absolute paths with the `-p` flag
+
+## Commit Message Style Guide
+
+**Objective:** Write concise, functional commit messages that explain purpose, not implementation details.
+
+**Guidelines:**
+- **Focus on "why" and "what it achieves"** rather than "what was changed"
+- **Be objective and technical** - avoid subjective language
+- **Prioritize function and purpose** over specific file modifications
+- **Keep it concise** - one line for simple changes, short paragraph for complex ones
+- **Use present tense** for consistency
+
+**Good Examples:**
+- "Limit Argo Workflows parallelism to prevent resource exhaustion"
+- "Optimize resource constraints for 8GB node environment"
+- "Enable workflow cleanup to reduce storage usage"
+- "Configure Argo Workflows for constrained single-node deployment"
+
+**Avoid:**
+- "Updated argo-workflows.pkl and argo-workflows.yaml files"
+- "Changed parallelism from 1 to 2 in the configuration"
+- "Added controller.parallelism setting to Helm values"
+- "Modified the PKL file to include new settings"
+
+**Rationale:** Commit messages should help future maintainers understand the purpose and reasoning behind changes, not just what files were modified. This approach creates a more useful git history for debugging and maintenance.
