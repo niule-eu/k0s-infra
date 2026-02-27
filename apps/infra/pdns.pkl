@@ -1,0 +1,318 @@
+import "pkl:reflect"
+
+import "@k8s-gateway/v1beta1/ReferenceGrant.pkl"
+import "@k8s/api/apps/v1/Deployment.pkl"
+import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
+import "@k8s/api/core/v1/Secret.pkl"
+import "@k8s/api/core/v1/Service.pkl"
+import "@k8s/api/networking/v1/NetworkPolicy.pkl"
+import "@k8s/K8sResource.pkl"
+
+import "./network-infra-ams23-meta.pkl" as niams23meta
+
+hidden fixed namespace = niams23meta.namespace
+hidden dns_container_port: Int = 5300
+hidden api_container_port: Int = 8081
+hidden api_host_port: Int = 8081
+hidden api_key: String = read("sops:/PDNS_API_KEY").text
+hidden allow_dnsupdate_from: String = ""
+hidden pod_labels {
+  ["ams23.niule.xyz/network-access"] = "pdns-auth"
+  ["app.kubernetes.io/name"] = "pdns-auth"
+}
+
+secrets: Listing = new {
+  // Secret for secrets (base64 encoded)
+  new Secret {
+    metadata {
+      name = "pdns-secrets"
+      namespace = module.namespace
+    }
+    data {
+      ["PDNS_AUTH_API_KEY"] = api_key.base64
+    }
+  }
+}
+
+resources: Listing = new {
+  // ConfigMap for PowerDNS configuration
+  new ConfigMap {
+    metadata {
+      name = "pdns-config"
+      namespace = module.namespace
+    }
+    data {
+      ["pdns.conf"] =
+        """
+        local-port=\(dns_container_port)
+        log-dns-queries=yes
+        log-dns-details=yes
+        loglevel=6
+        webserver-port=\(api_container_port)
+        dnsupdate=yes
+        allow-dnsupdate-from=\(allow_dnsupdate_from)
+        """
+      ["schema.sql"] =
+        read(
+          "https://raw.githubusercontent.com/PowerDNS/pdns/refs/heads/master/modules/gsqlite3backend/schema.sqlite3.sql"
+        ).text
+    }
+  }
+  // PersistentVolumeClaim for SQLite database
+  new PersistentVolumeClaim {
+    metadata {
+      name = "pdns-sqlite3"
+      namespace = module.namespace
+    }
+    spec {
+      accessModes = new Listing { "ReadWriteOnce" }
+      resources {
+        requests {
+          ["storage"] = "512Mi"
+        }
+      }
+    }
+  }
+
+  // Deployment for PowerDNS
+  new Deployment {
+    metadata {
+      name = "pdns"
+      namespace = module.namespace
+      labels {
+        ...pod_labels
+      }
+    }
+    spec {
+      replicas = 1
+      strategy {
+        type = "Recreate"
+      }
+      selector {
+        matchLabels {
+          ...pod_labels
+        }
+      }
+      template {
+        metadata {
+          labels {
+            ...pod_labels
+          }
+        }
+        spec {
+          initContainers {
+            new {
+              name = "sqlite3-init"
+              image = "docker.io/powerdns/pdns-auth-master:latest"
+              command {
+                "sqlite3"
+              }
+              args {
+                "-init"
+                "/tmp/schema.sql"
+                "/var/lib/powerdns/pdns.sqlite3"
+              }
+              volumeMounts {
+                new {
+                  name = "pdns-sqlite3"
+                  mountPath = "/var/lib/powerdns"
+                }
+                new {
+                  name = "pdns-config"
+                  mountPath = "/tmp/schema.sql"
+                  subPath = "schema.sql"
+                }
+              }
+            }
+          }
+          containers {
+            new {
+              name = "pdns-auth"
+              image = "docker.io/powerdns/pdns-auth-master:latest"
+              ports {
+                new {
+                  containerPort = dns_container_port
+                  protocol = "UDP"
+                }
+                new {
+                  containerPort = api_container_port
+                  protocol = "TCP"
+                }
+              }
+              envFrom {
+                new {
+                  configMapRef {
+                    name = "pdns-secrets"
+                  }
+                }
+              }
+              volumeMounts {
+                new {
+                  name = "pdns-sqlite3"
+                  mountPath = "/var/lib/powerdns"
+                }
+                new {
+                  name = "pdns-config"
+                  mountPath = "/etc/powerdns/pdns.d/pdns.conf"
+                  subPath = "pdns.conf"
+                  readOnly = true
+                }
+              }
+              resources {
+                requests {
+                  ["cpu"] = "100m"
+                  ["memory"] = "128Mi"
+                }
+                limits {
+                  ["cpu"] = "500m"
+                  ["memory"] = "512Mi"
+                }
+              }
+            }
+          }
+          volumes {
+            new {
+              name = "pdns-sqlite3"
+              persistentVolumeClaim {
+                claimName = "pdns-sqlite3"
+              }
+            }
+            new {
+              name = "pdns-config"
+              configMap {
+                name = "pdns-config"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Service for DNS (UDP)
+  new Service {
+    metadata {
+      name = "pdns-dns"
+      namespace = module.namespace
+    }
+    spec {
+      selector {
+        ...pod_labels
+      }
+      ports {
+        new {
+          name = "dns"
+          port = 53
+          targetPort = dns_container_port
+          protocol = "UDP"
+        }
+      }
+      type = "ClusterIP"
+    }
+  }
+
+  // Service for DNS (TCP)
+  new Service {
+    metadata {
+      name = "pdns-dns"
+      namespace = module.namespace
+    }
+    spec {
+      selector {
+        ...pod_labels
+      }
+      ports {
+        new {
+          name = "dns"
+          port = 53
+          targetPort = dns_container_port
+          protocol = "TCP"
+        }
+      }
+      type = "ClusterIP"
+    }
+  }
+
+  // Service for API (TCP)
+  new Service {
+    metadata {
+      name = "pdns-api"
+      namespace = module.namespace
+    }
+    spec {
+      selector {
+        ...pod_labels
+      }
+      ports {
+        new {
+          name = "api"
+          port = api_host_port
+          targetPort = api_container_port
+          protocol = "TCP"
+        }
+      }
+      type = "ClusterIP"
+    }
+  }
+  
+  // NetworkPolicy to restrict access to pdns-dns service
+  new NetworkPolicy {
+    metadata {
+      name = "pdns-dns-access"
+      namespace = module.namespace
+    }
+    spec {
+      podSelector {
+        matchLabels {
+          ...pod_labels
+        }
+      }
+      policyTypes {
+        "Ingress"
+      }
+      ingress {
+          new {
+            from {
+                new {
+                  podSelector {
+                    matchLabels {
+                      ...import("coredns.pkl").pod_labels
+                    }
+                  }
+                }
+            }
+            ports {
+                new {
+                  protocol = "UDP"
+                  port = dns_container_port
+                }
+            }
+          }
+        
+      }
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["pdns.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+    ["pdns.sops.yaml"] {
+      value = secrets
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+  }
+}

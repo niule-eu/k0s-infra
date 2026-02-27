@@ -4,3 +4,5 @@ resources:
 - coredns.yaml
 - dhcp.yaml
 - network-infra-ams23-meta.yaml
+- pdns.yaml
+- pdns.sops.yaml

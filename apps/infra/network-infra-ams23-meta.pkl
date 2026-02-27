@@ -1,4 +1,5 @@
 import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s-gateway/v1beta1/ReferenceGrant.pkl"
 import "@k8s/K8sResource.pkl"
 
 hidden namespace = "network-infra-ams23"
@@ -7,6 +8,42 @@ resources: Listing = new {
   new Namespace {
     metadata {
       name = module.namespace
+    }
+  }
+  new ReferenceGrant {
+    metadata {
+      name = "coredns-kube-system"
+      namespace = module.namespace
+    }
+    spec {
+      from {
+        new {
+          group = "gateway.networking.k8s.io"
+          kind = "UDPRoute"
+          namespace = "kube-system"
+        }
+        new {
+          group = "gateway.networking.k8s.io"
+          kind = "TCPRoute"
+          namespace = "kube-system"
+        }
+        new {
+          group = "gateway.networking.k8s.io"
+          kind = "TLSRoute"
+          namespace = "kube-system"
+        }
+        new {
+          group = "gateway.networking.k8s.io"
+          kind = "HTTPRoute"
+          namespace = "kube-system"
+        }
+      }
+      to {
+        new {
+          group = ""
+          kind = "Service"
+        }
+      }
     }
   }
 }

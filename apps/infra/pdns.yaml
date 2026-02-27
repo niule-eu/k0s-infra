@@ -1,0 +1,259 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pdns-config
+  namespace: network-infra-ams23
+data:
+  pdns.conf: |-
+    local-port=5300
+    log-dns-queries=yes
+    log-dns-details=yes
+    loglevel=6
+    webserver-port=8081
+    dnsupdate=yes
+    allow-dnsupdate-from=
+  schema.sql: |
+    PRAGMA foreign_keys = 1;
+
+    CREATE TABLE domains (
+      id                    INTEGER PRIMARY KEY,
+      name                  VARCHAR(255) NOT NULL COLLATE NOCASE,
+      master                VARCHAR(128) DEFAULT NULL,
+      last_check            INTEGER DEFAULT NULL,
+      type                  VARCHAR(8) NOT NULL,
+      notified_serial       INTEGER DEFAULT NULL,
+      account               VARCHAR(40) DEFAULT NULL,
+      options               VARCHAR(65535) DEFAULT NULL,
+      catalog               VARCHAR(255) DEFAULT NULL
+    );
+
+    CREATE UNIQUE INDEX name_index ON domains(name);
+    CREATE INDEX catalog_idx ON domains(catalog);
+
+
+    CREATE TABLE records (
+      id                    INTEGER PRIMARY KEY,
+      domain_id             INTEGER DEFAULT NULL,
+      name                  VARCHAR(255) DEFAULT NULL,
+      type                  VARCHAR(10) DEFAULT NULL,
+      content               VARCHAR(65535) DEFAULT NULL,
+      ttl                   INTEGER DEFAULT NULL,
+      prio                  INTEGER DEFAULT NULL,
+      disabled              BOOLEAN DEFAULT 0,
+      ordername             VARCHAR(255),
+      auth                  BOOL DEFAULT 1,
+      FOREIGN KEY(domain_id) REFERENCES domains(id) ON DELETE CASCADE ON UPDATE CASCADE
+    );
+
+    CREATE INDEX records_lookup_idx ON records(name, type);
+    CREATE INDEX records_lookup_id_idx ON records(domain_id, name, type);
+    CREATE INDEX records_order_idx ON records(domain_id, ordername);
+
+
+    CREATE TABLE supermasters (
+      ip                    VARCHAR(64) NOT NULL,
+      nameserver            VARCHAR(255) NOT NULL COLLATE NOCASE,
+      account               VARCHAR(40) NOT NULL
+    );
+
+    CREATE UNIQUE INDEX ip_nameserver_pk ON supermasters(ip, nameserver);
+
+
+    CREATE TABLE comments (
+      id                    INTEGER PRIMARY KEY,
+      domain_id             INTEGER NOT NULL,
+      name                  VARCHAR(255) NOT NULL,
+      type                  VARCHAR(10) NOT NULL,
+      modified_at           INT NOT NULL,
+      account               VARCHAR(40) DEFAULT NULL,
+      comment               VARCHAR(65535) NOT NULL,
+      FOREIGN KEY(domain_id) REFERENCES domains(id) ON DELETE CASCADE ON UPDATE CASCADE
+    );
+
+    CREATE INDEX comments_idx ON comments(domain_id, name, type);
+    CREATE INDEX comments_order_idx ON comments (domain_id, modified_at);
+
+
+    CREATE TABLE domainmetadata (
+     id                     INTEGER PRIMARY KEY,
+     domain_id              INT NOT NULL,
+     kind                   VARCHAR(32) COLLATE NOCASE,
+     content                TEXT,
+     FOREIGN KEY(domain_id) REFERENCES domains(id) ON DELETE CASCADE ON UPDATE CASCADE
+    );
+
+    CREATE INDEX domainmetaidindex ON domainmetadata(domain_id);
+
+
+    CREATE TABLE cryptokeys (
+     id                     INTEGER PRIMARY KEY,
+     domain_id              INT NOT NULL,
+     flags                  INT NOT NULL,
+     active                 BOOL,
+     published              BOOL DEFAULT 1,
+     content                TEXT,
+     FOREIGN KEY(domain_id) REFERENCES domains(id) ON DELETE CASCADE ON UPDATE CASCADE
+    );
+
+    CREATE INDEX domainidindex ON cryptokeys(domain_id);
+
+
+    CREATE TABLE tsigkeys (
+     id                     INTEGER PRIMARY KEY,
+     name                   VARCHAR(255) COLLATE NOCASE,
+     algorithm              VARCHAR(50) COLLATE NOCASE,
+     secret                 VARCHAR(255)
+    );
+
+    CREATE UNIQUE INDEX namealgoindex ON tsigkeys(name, algorithm);
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pdns-sqlite3
+  namespace: network-infra-ams23
+spec:
+  resources:
+    requests:
+      storage: 512Mi
+  accessModes:
+  - ReadWriteOnce
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    ams23.niule.xyz/network-access: pdns-auth
+    app.kubernetes.io/name: pdns-auth
+  name: pdns
+  namespace: network-infra-ams23
+spec:
+  template:
+    metadata:
+      labels:
+        ams23.niule.xyz/network-access: pdns-auth
+        app.kubernetes.io/name: pdns-auth
+    spec:
+      volumes:
+      - name: pdns-sqlite3
+        persistentVolumeClaim:
+          claimName: pdns-sqlite3
+      - configMap:
+          name: pdns-config
+        name: pdns-config
+      containers:
+      - ports:
+        - protocol: UDP
+          containerPort: 5300
+        - protocol: TCP
+          containerPort: 8081
+        volumeMounts:
+        - mountPath: /var/lib/powerdns
+          name: pdns-sqlite3
+        - mountPath: /etc/powerdns/pdns.d/pdns.conf
+          name: pdns-config
+          readOnly: true
+          subPath: pdns.conf
+        envFrom:
+        - configMapRef:
+            name: pdns-secrets
+        image: docker.io/powerdns/pdns-auth-master:latest
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        name: pdns-auth
+      initContainers:
+      - volumeMounts:
+        - mountPath: /var/lib/powerdns
+          name: pdns-sqlite3
+        - mountPath: /tmp/schema.sql
+          name: pdns-config
+          subPath: schema.sql
+        image: docker.io/powerdns/pdns-auth-master:latest
+        command:
+        - sqlite3
+        args:
+        - -init
+        - /tmp/schema.sql
+        - /var/lib/powerdns/pdns.sqlite3
+        name: sqlite3-init
+  replicas: 1
+  selector:
+    matchLabels:
+      ams23.niule.xyz/network-access: pdns-auth
+      app.kubernetes.io/name: pdns-auth
+  strategy:
+    type: Recreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdns-dns
+  namespace: network-infra-ams23
+spec:
+  ports:
+  - protocol: UDP
+    port: 53
+    name: dns
+    targetPort: 5300
+  type: ClusterIP
+  selector:
+    ams23.niule.xyz/network-access: pdns-auth
+    app.kubernetes.io/name: pdns-auth
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdns-dns
+  namespace: network-infra-ams23
+spec:
+  ports:
+  - protocol: TCP
+    port: 53
+    name: dns
+    targetPort: 5300
+  type: ClusterIP
+  selector:
+    ams23.niule.xyz/network-access: pdns-auth
+    app.kubernetes.io/name: pdns-auth
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdns-api
+  namespace: network-infra-ams23
+spec:
+  ports:
+  - protocol: TCP
+    port: 8081
+    name: api
+    targetPort: 8081
+  type: ClusterIP
+  selector:
+    ams23.niule.xyz/network-access: pdns-auth
+    app.kubernetes.io/name: pdns-auth
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pdns-dns-access
+  namespace: network-infra-ams23
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          ams23.niule.xyz/network-access: coredns-fwd
+    ports:
+    - protocol: UDP
+      port: 5300
+  podSelector:
+    matchLabels:
+      ams23.niule.xyz/network-access: pdns-auth
+      app.kubernetes.io/name: pdns-auth
+  policyTypes:
+  - Ingress

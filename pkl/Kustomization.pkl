@@ -1,12 +1,20 @@
 import "@k8s/K8sResource.pkl"
 
-allFiles : Mapping<String, FileOutput>
+allModules: Mapping<String, Module>
+
+local modulesFiltered = allModules.toMap().filter((key, _) -> key != "kustomization.pkl")
+
+local allFiles =
+  modulesFiltered.fold(
+    new Mapping<String, FileOutput> {},
+    (acc, key, value) -> (acc) { ...value.output.files!! },
+  )
 
 output {
   value = allFiles.keys.toDynamic()
   files = (allFiles) {
     ["kustomization.yaml"] {
-      value = new {        
+      value = new {
         apiVersion = "kustomize.config.k8s.io/v1beta1"
         kind = "Kustomization"
         resources = new Listing {
@@ -16,6 +24,6 @@ output {
       renderer = (K8sResource.output.renderer as YamlRenderer) {
         isStream = false
       }
-    }    
+    }
   }
 }

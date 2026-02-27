@@ -10,29 +10,11 @@ hidden fixed namespace = niams23meta.namespace
 hidden helm_chart_name = "coredns"
 hidden helm_chart_url = "oci://ghcr.io/coredns/charts/coredns"
 hidden helm_chart_version = "v1.45.2"
+hidden pod_labels {
+  ["ams23.niule.xyz/network-access"] = "coredns-fwd"
+}
 
 resources: Listing = new {
-  new ReferenceGrant {
-    metadata {
-      name = "coredns-kube-system"
-      namespace = module.namespace
-    }
-    spec {
-      from {
-        new {
-          group = "gateway.networking.k8s.io"
-          kind = "UDPRoute"
-          namespace = "kube-system"
-        }
-      }
-      to {
-        new {
-          group = ""
-          kind = "Service"
-        }
-      }
-    }
-  }
   new {
     apiVersion = "source.toolkit.fluxcd.io/v1"
     kind = "OCIRepository"
@@ -64,6 +46,9 @@ resources: Listing = new {
       }
       values {
         isClusterService = false
+        podLabels {
+          ...pod_labels
+        }
         servers {
           // TODO: Add server config for infra.ams23.niule.xyz, use env variables injected into coredns pod about authoritative dns service, see: https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables 
           new {
