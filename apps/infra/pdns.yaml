@@ -198,23 +198,11 @@ spec:
   ports:
   - protocol: UDP
     port: 53
-    name: dns
+    name: dns-udp
     targetPort: 5300
-  type: ClusterIP
-  selector:
-    ams23.niule.xyz/network-access: pdns-auth
-    app.kubernetes.io/name: pdns-auth
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: pdns-dns
-  namespace: network-infra-ams23
-spec:
-  ports:
   - protocol: TCP
     port: 53
-    name: dns
+    name: dns-tcp
     targetPort: 5300
   type: ClusterIP
   selector:

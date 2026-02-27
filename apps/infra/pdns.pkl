@@ -191,7 +191,7 @@ resources: Listing = new {
     }
   }
 
-  // Service for DNS (UDP)
+  // Service for DNS
   new Service {
     metadata {
       name = "pdns-dns"
@@ -203,29 +203,13 @@ resources: Listing = new {
       }
       ports {
         new {
-          name = "dns"
+          name = "dns-udp"
           port = 53
           targetPort = dns_container_port
           protocol = "UDP"
         }
-      }
-      type = "ClusterIP"
-    }
-  }
-
-  // Service for DNS (TCP)
-  new Service {
-    metadata {
-      name = "pdns-dns"
-      namespace = module.namespace
-    }
-    spec {
-      selector {
-        ...pod_labels
-      }
-      ports {
         new {
-          name = "dns"
+          name = "dns-tcp"
           port = 53
           targetPort = dns_container_port
           protocol = "TCP"
