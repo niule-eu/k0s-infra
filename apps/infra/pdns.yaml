@@ -155,7 +155,7 @@ spec:
           readOnly: true
           subPath: pdns.conf
         envFrom:
-        - configMapRef:
+        - secretRef:
             name: pdns-secrets
         image: docker.io/powerdns/pdns-auth-master:latest
         resources:
