@@ -4,7 +4,7 @@ import "@k8s/K8sResource.pkl"
 hidden namespace = "argo"
 hidden helm_chart_name = "argo-workflows"
 hidden helm_chart_url = "https://argoproj.github.io/argo-helm"
-hidden helm_chart_version = "0.46.0"
+hidden helm_chart_version = "0.47.4"
 hidden workflow_service_account_name = "argo-executor"
 
 hidden resource_constraints = new {
